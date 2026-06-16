@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+body {
+    background-color: #0a0a0a; /* Deep, premium dark background */
+    color: #ededed;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Buttery scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+    transition: background 0.2s;
+}
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.18);
+    }
+
+/* Smooth checkbox accent */
+input[type="checkbox"] {
+    transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+    input[type="checkbox"]:focus-visible {
+        outline: 2px solid rgba(255,255,255,0.3);
+        outline-offset: 2px;
+    }

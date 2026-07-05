@@ -1,0 +1,10 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\.github",
+    "\\.github\\workflows",
+    "\\src-tauri"
+  ],
+  "SelectedNode": "\\.github\\workflows\\release.yml",
+  "PreviewInSolutionExplorer": false
+}

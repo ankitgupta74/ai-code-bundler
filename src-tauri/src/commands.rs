@@ -37,15 +37,11 @@ pub fn scan_directory(path: String) -> Result<FileNode, String> {
 }
 
 // Note: The Recursive Explorer
-// This function looks at a path. If it's a file, it just takes notes. 
+// This function looks at a path. If it's a file, it just takes notes.
 // If it's a folder, it opens it, looks at every item inside, and if it finds ANOTHER folder, it calls ITSELF to open that one too!
 pub fn build_tree(path: &PathBuf) -> Result<FileNode, std::io::Error> {
     // Grab the name of the file/folder (fallback to empty string if it fails)
-    let name = path
-        .file_name()
-        .unwrap_or_default()
-        .to_string_lossy()
-        .to_string();
+    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
 
     // Create our base "Node" (the Javascript object we will eventually send to React)
     let mut node = FileNode {
@@ -66,7 +62,10 @@ pub fn build_tree(path: &PathBuf) -> Result<FileNode, std::io::Error> {
             let child_name = entry.file_name().to_string_lossy().to_string();
 
             // 1. The Bouncer: If the file is on our ignore list, or is a previously generated text file, mark it as "Ignored" and DO NOT open it.
-            if DEFAULT_IGNORE_LIST.contains(&child_name.as_str()) || child_name.starts_with("AI_BUNDLE_") {
+            if
+                DEFAULT_IGNORE_LIST.contains(&child_name.as_str()) ||
+                child_name.starts_with("AI_BUNDLE_")
+            {
                 children.push(FileNode {
                     name: child_name,
                     path: child_path.to_string_lossy().to_string(),
@@ -83,12 +82,25 @@ pub fn build_tree(path: &PathBuf) -> Result<FileNode, std::io::Error> {
             if child_path.is_file() {
                 if let Some(ext_os) = child_path.extension() {
                     let ext = ext_os.to_string_lossy().to_lowercase();
-                    
+
                     let reason = match ext.as_str() {
-                        "png" | "jpg" | "jpeg" | "gif" | "webp" | "ico" | "bmp" | "tiff" => Some("Photos".to_string()),
-                        "mp4" | "mkv" | "avi" | "mov" | "wmv" | "flv" | "webm" => Some("Video".to_string()),
+                        "png" | "jpg" | "jpeg" | "gif" | "webp" | "ico" | "bmp" | "tiff" =>
+                            Some("Photos".to_string()),
+                        "mp4" | "mkv" | "avi" | "mov" | "wmv" | "flv" | "webm" =>
+                            Some("Video".to_string()),
                         "mp3" | "wav" | "flac" | "m4a" | "ogg" => Some("Audio".to_string()),
-                        "pdf" | "zip" | "tar" | "gz" | "7z" | "rar" | "exe" | "dll" | "so" | "dylib" | "bin" | "iso" => Some("Binary".to_string()),
+                        | "pdf"
+                        | "zip"
+                        | "tar"
+                        | "gz"
+                        | "7z"
+                        | "rar"
+                        | "exe"
+                        | "dll"
+                        | "so"
+                        | "dylib"
+                        | "bin"
+                        | "iso" => Some("Binary".to_string()),
                         _ => None,
                     };
 
@@ -106,12 +118,12 @@ pub fn build_tree(path: &PathBuf) -> Result<FileNode, std::io::Error> {
                 }
             }
 
-            // 3. The Dive: If the file passed all filters, run `build_tree` on IT! 
+            // 3. The Dive: If the file passed all filters, run `build_tree` on IT!
             if let Ok(child_node) = build_tree(&child_path) {
                 children.push(child_node);
             }
         }
-        
+
         // Sort the results: Folders at the top, files at the bottom, organized alphabetically.
         children.sort_by(|a, b| {
             b.is_dir.cmp(&a.is_dir).then(a.name.to_lowercase().cmp(&b.name.to_lowercase()))
@@ -123,41 +135,41 @@ pub fn build_tree(path: &PathBuf) -> Result<FileNode, std::io::Error> {
 }
 
 // Note: The Publisher (.txt Generator)
-// This function actually creates a file on your hard drive. 
+// This function actually creates a file on your hard drive.
 // It takes all the selected files, formats them beautifully in Markdown, and writes them line-by-line.
 #[tauri::command]
 pub fn write_bundle(
     output_path: String,
     tree_string: String,
     file_paths: Vec<String>,
-    root_path: String,
+    root_path: String
 ) -> Result<String, String> {
     // Create the blank .txt file at the destination
     let mut file = std::fs::File::create(&output_path).map_err(|e| e.to_string())?;
 
     writeln!(file, "# 🧠 CODEBASE CONTEXT BUNDLE\n").unwrap();
-    
+
     // Conditionally write the family tree map ONLY if the user left the toggle "ON"
     if !tree_string.is_empty() {
         writeln!(file, "## 📁 REPOSITORY STRUCTURE\n```text\n{}```\n", tree_string).unwrap();
         writeln!(file, "---\n").unwrap();
     }
-    
+
     writeln!(file, "## 📄 FILE CONTENTS\n").unwrap();
 
     let mut success_count = 0;
     for path_str in file_paths {
         let path = std::path::Path::new(&path_str);
-        
+
         if path.is_file() {
             // Cut off the boring computer path ("C:/Users/...") and just keep the project path ("src/App.tsx")
             let relative_path = path.strip_prefix(&root_path).unwrap_or(path).to_string_lossy();
-            
+
             // Grab the extension (.tsx) so Markdown can color-code the syntax perfectly for the AI
             let ext = path.extension().unwrap_or_default().to_string_lossy();
 
             writeln!(file, "### File: `{}`", relative_path).unwrap();
-            
+
             // Try to read the file. If it succeeds, wrap it in backticks. If it fails (like a weird binary), skip it.
             match std::fs::read_to_string(path) {
                 Ok(content) => {
@@ -180,19 +192,19 @@ pub fn write_bundle(
 #[tauri::command]
 pub fn get_file_contents_for_copy(
     file_paths: Vec<String>,
-    root_path: String,
+    root_path: String
 ) -> Result<String, String> {
     let mut result = String::new(); // Our empty bucket to hold the text
 
     for path_str in file_paths {
         let path = std::path::Path::new(&path_str);
-        
+
         if path.is_file() {
             let relative_path = path.strip_prefix(&root_path).unwrap_or(path).to_string_lossy();
-            
+
             match std::fs::read_to_string(path) {
                 Ok(content) => {
-                    // Push the formatted text into our bucket. 
+                    // Push the formatted text into our bucket.
                     // Format: path \n " \n content \n " \n\n
                     result.push_str(&format!("{}\n\"\n{}\n\"\n\n", relative_path, content));
                 }
